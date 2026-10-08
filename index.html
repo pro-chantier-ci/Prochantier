@@ -467,6 +467,26 @@ button,input,select,textarea{font:inherit;color:inherit}
 .brand b i{font-style:normal;color:var(--lagon)}
 .guideBtn{margin-left:auto;appearance:none;cursor:pointer;background:var(--tq-soft);border:0;color:var(--tq);border-radius:999px;font:600 12px/1 var(--sans);letter-spacing:.08em;text-transform:uppercase;padding:10px 14px}
 .tabs{display:flex;margin-top:12px}
+.acctBtn{appearance:none;cursor:pointer;flex:none;width:38px;height:38px;border-radius:50%;border:2px solid var(--tq-soft);background:var(--tq);color:var(--on-tq);font:800 13px/1 var(--sans);display:grid;place-items:center;overflow:hidden;padding:0}
+.acctBtn img{width:100%;height:100%;object-fit:cover;background:#fff}
+.acctBtn[aria-current="page"]{border-color:var(--lagon);box-shadow:0 0 0 3px var(--tq-soft)}
+.profile{display:flex;gap:14px;align-items:center;background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:16px;margin-top:16px}
+.profile .av{width:58px;height:58px;border-radius:50%;background:var(--tq);color:var(--on-tq);display:grid;place-items:center;font:800 20px/1 var(--display);overflow:hidden;flex:none}
+.profile .av img{width:100%;height:100%;object-fit:cover;background:#fff}
+.profile b{display:block;font:800 18px/1.2 var(--display)}.profile small{color:var(--muted)}
+.lic{display:flex;gap:10px;align-items:center;padding:14px;border-radius:14px;margin-top:4px}
+.lic.ok{background:var(--ok-soft);color:var(--ok)}.lic.trial{background:var(--orange-soft);color:var(--orange)}
+.lic b{display:block;font:800 15px/1.2 var(--sans)}.lic small{color:inherit;opacity:.85;font-family:var(--mono);letter-spacing:.04em}
+html.bigText body{zoom:1.12}
+#lock{position:fixed;inset:0;z-index:200;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:24px;text-align:center}
+#lock h2{margin:6px 0 0;font:800 22px/1.2 var(--display);color:var(--ink);text-transform:none;letter-spacing:-.02em}
+#lock .dots{display:flex;gap:14px;margin:6px 0}#lock .dots i{width:16px;height:16px;border-radius:50%;border:2px solid var(--tq);display:block}#lock .dots i.on{background:var(--tq)}
+#lock .pad{display:grid;grid-template-columns:repeat(3,72px);gap:12px;margin-top:6px}
+#lock .pad button{appearance:none;height:64px;border-radius:50%;border:1px solid var(--line);background:var(--surface);color:var(--ink);font:700 24px/1 var(--sans);cursor:pointer}
+#lock .pad button.x{border:0;background:none;font-size:15px;color:var(--muted)}
+#lock .msg{min-height:20px;color:var(--bad);font-size:14px}
+#lock .lnk{appearance:none;border:0;background:none;color:var(--tq);font:600 14px/1 var(--sans);cursor:pointer;margin-top:4px}
+@keyframes shake{0%,100%{transform:none}25%{transform:translateX(-8px)}75%{transform:translateX(8px)}}.shake{animation:shake .3s}
 .tab{flex:auto;appearance:none;background:none;border:0;border-bottom:3px solid transparent;padding:12px 4px 10px;font:700 13.5px/1 var(--sans);color:var(--muted);cursor:pointer;white-space:nowrap}
 .tab[aria-selected="true"]{color:var(--tq);border-bottom-color:var(--lagon)}
 h1{font:800 32px/1.05 var(--display);letter-spacing:-.035em;margin:22px 0 6px;text-wrap:balance}
@@ -630,7 +650,7 @@ td.n,th.n{text-align:right;white-space:nowrap}
   <header class="top">
     <div class="brand">
       <svg width="26" height="22" viewBox="0 0 90 75" aria-hidden="true"><rect width="26" height="15" fill="#E8772E"/><rect y="20" width="46" height="15" fill="#0A7F7A"/><rect y="40" width="64" height="15" fill="#0A7F7A"/><rect y="60" width="90" height="15" fill="#0A7F7A"/></svg>
-      <b>pro chantier<i>.</i></b><button class="guideBtn" type="button" data-act="guide">Guide</button>
+      <b>pro chantier<i>.</i></b><button class="guideBtn" type="button" data-act="guide">Guide</button><button class="acctBtn" id="acctBtn" type="button" data-act="acct" aria-label="Mon compte"></button>
     </div>
     <nav class="tabs" role="tablist">
       <button class="tab" role="tab" data-tab="sites" aria-selected="true">Chantiers</button>
@@ -824,13 +844,13 @@ const bySite=r=>(r.sites||[]).map(x=>`${esc(x.n)} : ${jj(x.d)}`).join(' · ');
 
 /* ================= NAVIGATION ================= */
 let R={tab:'sites',site:null,sub:'resume',day:today(),pay:'week',from:'',to:'',bilan:false,bf:'all'};
-try{const s=JSON.parse(sessionStorage.getItem('pc_nav')||'null');if(isObj(s)&&['sites','team','pay','set'].includes(s.tab))R={...R,...s,day:validD(s.day)?s.day:today()};if(R.site&&!site(R.site))R.site=null}catch(e){}
+try{const s=JSON.parse(sessionStorage.getItem('pc_nav')||'null');if(isObj(s)&&['sites','team','pay','set','acct'].includes(s.tab))R={...R,...s,day:validD(s.day)?s.day:today()};if(R.site&&!site(R.site))R.site=null}catch(e){}
 function go(p){R={...R,...p};try{sessionStorage.setItem('pc_nav',JSON.stringify(R))}catch(e){}render();window.scrollTo({top:0})}
 document.querySelectorAll('.tab').forEach(t=>t.onclick=()=>go({tab:t.dataset.tab,site:null,bilan:false}));
 
-function render(){document.querySelectorAll('.tab').forEach(t=>t.setAttribute('aria-selected',t.dataset.tab===R.tab));
+function render(){document.querySelectorAll('.tab').forEach(t=>t.setAttribute('aria-selected',t.dataset.tab===R.tab));acctBtnPaint();
   const v=$('view');
-  try{v.innerHTML=R.tab==='sites'?(R.site&&site(R.site)?vSite():R.bilan?vBilan():vSites()):R.tab==='team'?vTeam():R.tab==='pay'?vPay():vSet()}
+  try{v.innerHTML=R.tab==='sites'?(R.site&&site(R.site)?vSite():R.bilan?vBilan():vSites()):R.tab==='team'?vTeam():R.tab==='pay'?vPay():R.tab==='acct'?vAcct():vSet()}
   catch(e){console.error(e);v.innerHTML=`<div class="alertbox bad" style="margin-top:20px">Un affichage a échoué. Vos données sont conservées. Exportez une sauvegarde depuis l'onglet Mon entreprise si le problème continue.</div>`}
   after()}
 function after(){document.querySelectorAll('img[data-ph]').forEach(async im=>{const d=await photo(im.dataset.ph);if(d)im.src=d;else im.alt='Photo indisponible'})}
@@ -994,6 +1014,66 @@ function vSet(){const c=DB.co;
   <h2>Exemple</h2><div class="btns">${DB.sites.some(s=>s.demo)?'<button class="btn ghost" data-act="demoDel" type="button">Effacer l\'exemple</button>':'<button class="btn ghost" data-act="demo" type="button">Charger un exemple</button>'}<button class="btn ghost" data-act="welcome" type="button">Revoir l'accueil</button></div>
   <p class="hint">Pro Chantier · version 1.0</p>`}
 
+/* ================= MON COMPTE ================= */
+const PREF=k=>{try{return localStorage.getItem('pc_'+k)||''}catch(e){return ''}},SETP=(k,v)=>{try{v?localStorage.setItem('pc_'+k,v):localStorage.removeItem('pc_'+k)}catch(e){}};
+const initials=n=>(String(n||'').trim().split(/\s+/).filter(w=>/[A-Za-zÀ-ÿ0-9]/.test(w)).slice(0,2).map(w=>w[0]).join('')||'PC').toUpperCase();
+function acctBtnPaint(){const b=$('acctBtn');if(!b)return;b.innerHTML=LOGO?`<img src="${esc(LOGO)}" alt="">`:esc(initials(DB.co.name));b.setAttribute('aria-current',R.tab==='acct'?'page':'false')}
+function applyPrefs(){const t=PREF('theme'),h=document.documentElement;if(t==='light'||t==='dark')h.dataset.theme=t;else delete h.dataset.theme;h.classList.toggle('bigText',PREF('fs')==='l')}
+applyPrefs();
+const pinHash=p=>{let h=0x811c9dc5;const x='pc-pin:'+p;for(let i=0;i<x.length;i++){h^=x.charCodeAt(i);h=Math.imul(h,0x01000193)>>>0}return h.toString(36)};
+const licInfo=()=>{try{if(window.licState)return window.licState()}catch(e){}return {full:true,code:'',buy:'',file:true}};
+const ncode=c=>{c=String(c||'').toUpperCase().replace(/[^A-Z0-9]/g,'');return c.length===14&&c.startsWith('PC')?c.slice(2):c};
+const maskCode=c=>{c=ncode(c);return c.length===12?'PC-'+c.slice(0,4)+'-••••-'+c.slice(8):c};
+function vAcct(){const c=DB.co,L=licInfo(),pin=!!PREF('pin'),th=PREF('theme')||'auto',fs=PREF('fs')||'n',last=PREF('lastExport'),nPh=DB.jr.reduce((a,j)=>a+j.photos.length,0);
+  const ago=last?Math.floor((Date.now()-new Date(last).getTime())/864e5):null;
+  return `<h1>Mon <em>compte</em></h1>
+  <div class="profile"><div class="av">${LOGO?`<img src="${esc(LOGO)}" alt="">`:esc(initials(c.name))}</div><div style="flex:1;min-width:0"><b>${esc(c.name)}</b><small>${esc(c.act||'')}${c.tel?' · '+esc(c.tel):''}</small></div></div>
+  <div class="btns one" style="margin-top:10px"><button class="btn ghost small" data-act="goSet" type="button">Modifier mon entreprise et mon logo</button></div>
+  <h2>Ma licence</h2>
+  ${L.full?`<div class="lic ok"><span style="font-size:22px">✓</span><div><b>Version complète${L.file?'':' activée'}</b><small>${L.code?esc(maskCode(L.code)):'Paiement unique · sans abonnement'}</small></div></div>`
+   :`<div class="lic trial"><span style="font-size:22px">⏳</span><div><b>Version d'essai</b><small>1 chantier · PDF « Démonstration »</small></div></div>
+     <div class="btns">${L.buy?`<a class="btn" href="${esc(L.buy)}" target="_blank" rel="noopener">Acheter · 7 500 F</a>`:''}<button class="btn ghost" data-act="licAct" type="button">J'ai un code</button></div>`}
+  ${L.full&&L.code?`<p class="hint">Vous changez de téléphone ? Exportez vos données, puis retirez la licence de ce téléphone. Votre code marchera sur le nouveau.</p><div class="btns one"><button class="btn danger small" data-act="licOut" type="button">Retirer la licence de ce téléphone</button></div>`:''}
+  <h2>Sécurité</h2>
+  <div class="list"><div class="row"><div class="m"><b>Code de verrouillage</b><small>${pin?'Activé : le code est demandé à chaque ouverture':'Protégez vos chiffres si quelqu\'un utilise votre téléphone'}</small></div></div></div>
+  <div class="btns${pin?'':' one'}">${pin?'<button class="btn ghost" data-act="pinNew" type="button">Changer le code</button><button class="btn ghost" data-act="pinDel" type="button">Retirer le code</button>':'<button class="btn" data-act="pinNew" type="button">Créer un code à 4 chiffres</button>'}</div>
+  <h2>Apparence</h2>
+  <p class="hint" style="margin:0 0 4px">Thème</p><div class="seg" role="group" aria-label="Thème" style="margin-top:4px">${[['auto','Automatique'],['light','Clair'],['dark','Sombre']].map(([k,l])=>`<button type="button" data-act="theme" data-id="${k}" aria-pressed="${th===k}">${l}</button>`).join('')}</div>
+  <p class="hint" style="margin:14px 0 4px">Taille du texte</p><div class="seg" role="group" aria-label="Taille du texte" style="margin-top:4px">${[['n','Normale'],['l','Grande']].map(([k,l])=>`<button type="button" data-act="fs" data-id="${k}" aria-pressed="${fs===k}">${l}</button>`).join('')}</div>
+  <h2>Mes données</h2>
+  <div class="list"><div class="row"><div class="m"><b>Sur ce téléphone</b><small>${DB.sites.length} chantier${DB.sites.length>1?'s':''} · ${DB.workers.filter(w=>!w.hidden).length} ouvrier${DB.workers.filter(w=>!w.hidden).length>1?'s':''} · ${nPh} photo${nPh>1?'s':''}</small></div></div>
+   <div class="row"><div class="m"><b>Dernière sauvegarde</b><small>${last?(ago<1?'Aujourd\'hui':ago===1?'Hier':'Il y a '+ago+' jours')+' · '+dFr(last.slice(0,10)):'Jamais'}</small></div>${!last||ago>7?'<div class="v" style="color:var(--warn);font-size:12px">À faire</div>':''}</div></div>
+  <div class="btns"><button class="btn ghost" data-act="export" type="button">Sauvegarder</button><label class="btn ghost fileLbl">Restaurer<input id="impIn" type="file" accept="application/json,.json"></label></div><div id="impBox"></div>
+  <h2>Aide</h2>
+  <div class="btns"><button class="btn ghost" data-act="guide" type="button">Guide (PDF)</button><a class="btn ghost" href="https://wa.me/2250748655120?text=${encodeURIComponent('Bonjour, j\'ai une question sur Pro Chantier.')}" target="_blank" rel="noopener">Assistance WhatsApp</a></div>
+  <div class="btns one" style="margin-top:8px"><button class="btn ghost small" data-act="welcome" type="button">Revoir l'accueil</button></div>
+  <h2>Session</h2>
+  <div class="btns one"><button class="btn" data-act="lock" type="button">Se déconnecter</button></div>
+  <p class="hint">${pin?'L\'application se verrouille : votre code sera demandé pour revenir.':'Créez d\'abord un code de verrouillage pour pouvoir vous déconnecter.'}</p>
+  <div class="btns one" style="margin-top:18px"><button class="btn danger small" data-act="wipe" type="button">Effacer toutes les données de ce téléphone</button></div>
+  <p class="hint">Pro Chantier · version 1.1 · vos données restent uniquement sur ce téléphone.</p>`}
+function pinSheet(){let step=1,first='';const draw=()=>sheet(step===1?'Nouveau code':'Confirmez le code',`<p class="lead" style="margin:0 0 10px">${step===1?'Choisissez 4 chiffres faciles à retenir pour vous, difficiles à deviner pour les autres.':'Tapez le même code une deuxième fois.'}</p><div class="fields"><div class="f w2"><label for="pinIn">Code à 4 chiffres</label><input id="pinIn" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="4" autocomplete="off" style="font:700 26px/1 var(--mono);letter-spacing:.5em;text-align:center"></div></div>`,
+   [{id:'shSave',label:step===1?'Continuer':'Enregistrer le code',fn:()=>{const v=val('pinIn');if(!/^\d{4}$/.test(v)){toast('Tapez 4 chiffres');return}
+     if(step===1){first=v;step=2;draw()}else if(v!==first){toast('Les deux codes ne sont pas pareils. Recommencez.');step=1;first='';draw()}else{SETP('pin',pinHash(v));closeSheet();render();toast('Code de verrouillage activé')}}}]);draw()}
+let lockBuf='';
+function lockApp(){if(!PREF('pin'))return false;closeSheet();lockBuf='';let el=$('lock');if(!el){el=document.createElement('div');el.id='lock';document.body.appendChild(el)}
+  el.innerHTML=`<svg width="54" height="45" viewBox="0 0 90 75" aria-hidden="true"><rect width="26" height="15" fill="#E8772E"/><rect y="20" width="46" height="15" fill="#0A7F7A"/><rect y="40" width="64" height="15" fill="#0A7F7A"/><rect y="60" width="90" height="15" fill="#0A7F7A"/></svg>
+   <h2>${esc(DB.co.name)}</h2><p class="hint" style="margin:0">Entrez votre code pour ouvrir Pro Chantier</p><div class="dots">${'<i></i>'.repeat(4)}</div><div class="msg" id="lockMsg"></div>
+   <div class="pad">${[1,2,3,4,5,6,7,8,9].map(n=>`<button type="button" data-k="${n}">${n}</button>`).join('')}<span></span><button type="button" data-k="0">0</button><button type="button" class="x" data-k="del" aria-label="Effacer">⌫</button></div>
+   <button class="lnk" type="button" id="lockForgot">Code oublié ?</button>`;
+  el.querySelector('.pad').onclick=e=>{const b=e.target.closest('button');if(!b)return;const k=b.dataset.k;if(k==='del')lockBuf=lockBuf.slice(0,-1);else if(lockBuf.length<4)lockBuf+=k;
+    el.querySelectorAll('.dots i').forEach((d,i)=>d.classList.toggle('on',i<lockBuf.length));
+    if(lockBuf.length===4){if(pinHash(lockBuf)===PREF('pin')){el.remove();SETP('hid','')}else{const d=el.querySelector('.dots');d.classList.remove('shake');void d.offsetWidth;d.classList.add('shake');$('lockMsg').textContent='Code incorrect';lockBuf='';setTimeout(()=>el.querySelectorAll('.dots i').forEach(x=>x.classList.remove('on')),250)}}};
+  $('lockForgot').onclick=()=>{const L=licInfo();
+    if(L.code){el.querySelector('.pad').outerHTML=`<div style="width:100%;max-width:320px"><input id="lockCode" placeholder="PC-XXXX-XXXX-XXXX" autocapitalize="characters" style="width:100%;font:600 17px/1 var(--mono);padding:14px;border:2px solid var(--line);border-radius:12px;background:var(--surface);color:var(--ink);text-align:center;text-transform:uppercase"><button class="btn" type="button" id="lockCodeGo" style="margin-top:10px">Débloquer avec mon code d'activation</button></div>`;
+      $('lockMsg').textContent='';$('lockForgot').remove();el.querySelector('.hint').textContent='Entrez le code d\'activation reçu à l\'achat';
+      $('lockCodeGo').onclick=()=>{const v=ncode($('lockCode').value);if(v&&v===ncode(L.code)){SETP('pin','');el.remove();toast('Code de verrouillage retiré. Créez-en un nouveau dans Mon compte.')}else $('lockMsg').textContent='Code d\'activation incorrect'}}
+    else{$('lockMsg').innerHTML='Sans code d\'activation, la seule solution est d\'effacer les données de ce téléphone.';$('lockForgot').textContent='Effacer les données et recommencer';$('lockForgot').onclick=ev=>confirmBtn(ev.target,'Confirmer : tout effacer',wipeAll)}};
+  return true}
+function wipeAll(){try{Object.keys(localStorage).filter(k=>k.startsWith('pc_')&&!/^pc_(lic|theme|fs)$/.test(k)).forEach(k=>localStorage.removeItem(k))}catch(e){}
+  try{indexedDB.deleteDatabase('pc_photos')}catch(e){}try{sessionStorage.removeItem('pc_nav')}catch(e){}location.reload()}
+document.addEventListener('visibilitychange',()=>{if(!PREF('pin'))return;if(document.hidden)SETP('hid',String(Date.now()));else{const h=+PREF('hid');if(h&&Date.now()-h>5*60e3)lockApp()}});
+
 /* ================= FORMULAIRES (feuille du bas) ================= */
 function sheet(title,body,actions){const L=$('layer');L.innerHTML=`<div class="scrim" id="scrim"><div class="sheet" role="dialog" aria-modal="true" aria-labelledby="shT"><div class="hd"><b id="shT">${esc(title)}</b><button class="x" type="button" data-act="close" aria-label="Fermer">×</button></div>${body}<div class="btns ${actions.length===1?'one':''}" style="margin-top:18px">${actions.map(a=>`<button class="btn ${a.ghost?'ghost':''} ${a.danger?'danger':''}" type="button" id="${a.id}">${esc(a.label)}</button>`).join('')}</div></div></div>`;
   $('scrim').addEventListener('click',e=>{if(e.target.id==='scrim')closeSheet()});
@@ -1060,6 +1140,16 @@ function jrForm(j){const s=site(R.site),x=j||{date:today(),text:'',photos:[]};jr
 document.addEventListener('click',e=>{const el=e.target.closest('[data-act]');if(!el)return;const a=el.dataset.act,id=el.dataset.id,s=R.site&&site(R.site);
   switch(a){
    case 'close':closeSheet();break;
+   case 'acct':go({tab:'acct',site:null,bilan:false});break;
+   case 'goSet':go({tab:'set',site:null});break;
+   case 'theme':SETP('theme',id==='auto'?'':id);applyPrefs();render();break;
+   case 'fs':SETP('fs',id==='l'?'l':'');applyPrefs();render();break;
+   case 'pinNew':pinSheet();break;
+   case 'pinDel':confirmBtn(el,'Confirmer : retirer le code',()=>{SETP('pin','');render();toast('Code de verrouillage retiré')});break;
+   case 'lock':if(!lockApp()){toast('Créez d\'abord un code de verrouillage');pinSheet()}break;
+   case 'licAct':if(window.actSheet)window.actSheet();break;
+   case 'licOut':confirmBtn(el,'Confirmer : retirer la licence',()=>{if(window.licOut)window.licOut();render();toast('Licence retirée de ce téléphone')});break;
+   case 'wipe':confirmBtn(el,'Confirmer : TOUT effacer',()=>wipeAll());break;
    case 'home':go({site:null,bilan:false});break;
    case 'bilan':go({site:null,bilan:true});break;
    case 'bf':go({bf:id});break;
@@ -1124,7 +1214,7 @@ document.addEventListener('change',e=>{const t=e.target;
 const browserDl={save:async({filename,data})=>{const u=URL.createObjectURL(data);const a=document.createElement('a');a.href=u;a.download=filename;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),5000)}};
 let dlP=null;function getDl(){if(!dlP)dlP=(async()=>{try{if(window.claude&&window.claude.use){const d=await window.claude.use('downloads');if(d)return d}}catch(e){}return browserDl})();return dlP}
 async function saveFile(name,blob,msg){if(IOS&&navigator.share&&window.File){const f=new File([blob],name,{type:blob.type||'application/octet-stream'});if(!navigator.canShare||navigator.canShare({files:[f]})){sheet('Fichier prêt',`<p class="lead" style="margin:0">${esc(name)}</p><p style="margin:10px 0 0;color:#5C777D;font-size:14px">Touchez « Partager » puis choisissez WhatsApp, ou « Enregistrer dans Fichiers ».</p>`,[{id:'shShare',label:'Partager',fn:async()=>{try{await navigator.share({files:[f],title:name});closeSheet();if(msg)toast(msg)}catch(e){if(e&&e.name!=='AbortError'){const u=URL.createObjectURL(blob);window.open(u,'_blank')}}}}]);return}}try{const d=await getDl();await d.save({filename:name,data:blob});if(msg)toast(msg)}catch(e){const c=e&&e.code;if(c==='declined')return;toast(c==='rate_limited'?'Une demande est déjà ouverte, réessayez dans un instant':'Le fichier n\'a pas pu être enregistré. Réessayez.')}}
-async function exportData(){const photos={};for(const j of DB.jr)for(const p of j.photos){const d=await photo(p);if(d)photos[p]=d}
+async function exportData(){SETP('lastExport',new Date().toISOString());const photos={};for(const j of DB.jr)for(const p of j.photos){const d=await photo(p);if(d)photos[p]=d}
   const data={app:'Pro Chantier',version:1,date:new Date().toISOString(),db:DB,logo:LOGO,photos};
   saveFile(`prochantier-sauvegarde-${today()}.json`,new Blob([JSON.stringify(data)],{type:'application/json'}),'Sauvegarde exportée')}
 function importData(file){const r=new FileReader();r.onload=()=>{let d;try{d=JSON.parse(r.result);if(!isObj(d)||!isObj(d.db))throw 0}catch(e){toast('Ce fichier n\'est pas une sauvegarde Pro Chantier');return}
@@ -1146,8 +1236,10 @@ const IOS=/iPad|iPhone|iPod/.test(navigator.userAgent)||(navigator.platform==='M
 const STANDALONE=(window.matchMedia&&matchMedia('(display-mode: standalone)').matches)||navigator.standalone===true;
 function trialBar(){const b=document.getElementById('demoBar');if(!b)return;if(FULL){b.hidden=true;return}
   b.hidden=false;b.innerHTML='Version d\'essai · 1 chantier · PDF « Démonstration »<br><a href="'+BUY_URL+'" target="_blank" rel="noopener" class="buyBtn">Acheter · 7 500 F</a><button type="button" id="actBtn">J\'ai un code</button>';document.getElementById('actBtn').onclick=actSheet}
+window.licState=()=>{let c='';try{c=localStorage.getItem('pc_lic')||''}catch(e){}return {full:FULL,code:FULL?c:'',buy:BUY_URL}};
+window.licOut=()=>{try{localStorage.removeItem('pc_lic')}catch(e){}FULL=false;trialBar()};
 function actSheet(){sheet('Activer Pro Chantier',`<p class="lead" style="margin:0 0 14px">Entrez le code d'activation reçu après votre achat. La version complète se débloque sur ce téléphone, sans internet.</p><div class="fields">${fld('actCode','Code d\'activation','',{w2:1,ph:'PC-XXXX-XXXX-XXXX'})}</div>${BUY_URL?`<p style="margin:14px 0 0"><a href="${esc(BUY_URL)}" target="_blank" rel="noopener" style="color:var(--tq,#0A7F7A);font-weight:700">Acheter un code d\'activation ›</a></p>`:''}`,
-  [{id:'actGo',label:'Activer',fn:()=>{const c=val('actCode');if(!codeOk(c)){toast('Code non valable. Vérifiez les lettres et les chiffres.');return}try{localStorage.setItem('pc_lic',normCode(c))}catch(e){}FULL=true;closeSheet();trialBar();toast('Merci ! Pro Chantier est activé : version complète.')}}])}
+  [{id:'actGo',label:'Activer',fn:()=>{const c=val('actCode');if(!codeOk(c)){toast('Code non valable. Vérifiez les lettres et les chiffres.');return}try{localStorage.setItem('pc_lic',normCode(c))}catch(e){}FULL=true;closeSheet();trialBar();render();toast('Merci ! Pro Chantier est activé : version complète.')}}])}
 
 async function getGuide(){toast('Préparation du guide…');try{const bin=atob(GUIDE64),u8=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)u8[i]=bin.charCodeAt(i);const b=new Blob([u8],{type:'application/pdf'});await saveFile('ProChantier-Guide-de-formation.pdf',b,'Guide téléchargé')}catch(e){toast('Le guide n\'a pas pu être téléchargé. Réessayez.')}}
 
@@ -1238,5 +1330,6 @@ render();trialBar();
 try{if(IOS&&!STANDALONE&&!localStorage.getItem('pc_tip')){const t=document.getElementById('iosTip');t.hidden=false;t.innerHTML='<span>📲 <b>Installez l\'application :</b> touchez le bouton Partager <b>⬆︎</b> en bas de Safari, puis <b>« Sur l\'écran d\'accueil »</b>. Vos données seront gardées en sécurité.</span><button type="button" aria-label="Fermer">×</button>';t.querySelector('button').onclick=()=>{t.hidden=true;try{localStorage.setItem('pc_tip','1')}catch(e){}}}}catch(e){}
 if('serviceWorker' in navigator&&(location.protocol==='https:'||location.hostname==='localhost')){addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}))}
 try{if(navigator.storage&&navigator.storage.persist)navigator.storage.persist()}catch(e){}
-try{if(!localStorage.getItem(KP+'welcome')&&!DB.sites.length)welcome()}catch(e){}
+const LOCKED=!!PREF('pin')&&lockApp();
+try{if(!LOCKED&&!localStorage.getItem(KP+'welcome')&&!DB.sites.length)welcome()}catch(e){}
 </script>
