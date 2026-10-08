@@ -598,6 +598,7 @@ details.recap .row{min-height:0;padding:10px 12px}
 .steps b{display:block}
 .skip{appearance:none;background:none;border:0;color:var(--muted);font:600 14px var(--sans);padding:14px;width:100%;cursor:pointer}
 body:has(.scrim) .toast{bottom:auto;top:calc(14px + env(safe-area-inset-top,0px))}
+.bysite{display:block;margin-top:3px;color:var(--tq,#0A7F7A)!important;font-weight:600}
 .toast{pointer-events:none;position:fixed;left:50%;bottom:calc(22px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);z-index:50;background:var(--ink);color:var(--bg);padding:12px 16px;border-radius:12px;font-size:13.5px;max-width:calc(100% - 32px);box-shadow:0 10px 30px rgba(0,0,0,.25)}
 .logoBox{width:84px;height:84px;border:1px dashed var(--line);border-radius:12px;display:flex;align-items:center;justify-content:center;background:var(--surface);overflow:hidden;color:var(--muted);font:500 10px var(--mono);text-align:center}
 .logoBox img{max-width:100%;max-height:100%;object-fit:contain}
@@ -695,7 +696,7 @@ function clean(o){const d=DEF();if(!isObj(o))return d;
   d.exp=A(o.exp).filter(e=>sids.has(e.site)).map(e=>({id:id(e.id),site:e.site,date:validD(e.date)?e.date:today(),cat:CATS[e.cat]?e.cat:'div',label:str(e.label,160),supplier:str(e.supplier,120),amount:Math.max(0,num0(e.amount))}));
   d.pay=A(o.pay).filter(e=>sids.has(e.site)).map(e=>({id:id(e.id),site:e.site,date:validD(e.date)?e.date:today(),amount:Math.max(0,num0(e.amount)),mode:MODES[e.mode]?e.mode:'esp',note:str(e.note,200)}));
   d.adv=A(o.adv).filter(e=>wids.has(e.worker)).map(e=>({id:id(e.id),worker:e.worker,date:validD(e.date)?e.date:today(),amount:Math.max(0,num0(e.amount)),note:str(e.note,160),run:typeof e.run==='string'?e.run:null}));
-  d.runs=A(o.runs).map(r=>({id:id(r.id),from:validD(r.from)?r.from:today(),to:validD(r.to)?r.to:today(),date:validD(r.date)?r.date:today(),total:Math.max(0,num0(r.total)),lines:Array.isArray(r.lines)?r.lines.filter(isObj).map(l=>({w:str(l.w,24),name:str(l.name,80),days:Math.max(0,num0(l.days)),gross:Math.max(0,num0(l.gross)),adv:Math.max(0,num0(l.adv)),net:num0(l.net)})):[]}));
+  d.runs=A(o.runs).map(r=>({id:id(r.id),from:validD(r.from)?r.from:today(),to:validD(r.to)?r.to:today(),date:validD(r.date)?r.date:today(),total:Math.max(0,num0(r.total)),lines:Array.isArray(r.lines)?r.lines.filter(isObj).map(l=>({w:str(l.w,24),name:str(l.name,80),days:Math.max(0,num0(l.days)),gross:Math.max(0,num0(l.gross)),adv:Math.max(0,num0(l.adv)),net:num0(l.net),sites:A(l.sites).filter(isObj).slice(0,50).map(x=>({n:str(x.n,120),d:Math.max(0,num0(x.d)),g:Math.max(0,num0(x.g))}))})):[]}));
   d.jr=A(o.jr).filter(e=>sids.has(e.site)).map(e=>({id:id(e.id),site:e.site,date:validD(e.date)?e.date:today(),text:str(e.text,4000),photos:Array.isArray(e.photos)?e.photos.filter(p=>typeof p==='string'&&/^[a-z0-9]{1,24}$/.test(p)).slice(0,12):[]}));
   return d}
 try{const raw=localStorage.getItem(KP+'db');if(raw)DB=clean(JSON.parse(raw))}catch(e){DB=DEF()}
@@ -815,8 +816,11 @@ function vBilan(){const B=bilanData(R.bf),pc=v=>v==null?'—':Math.round(v)+' %'
   return h+`<div class="btns one" style="margin-top:18px"><button class="btn" data-act="pdfGen" type="button">Télécharger le bilan général PDF</button></div><p class="hint">Le PDF reprend le bilan et le récapitulatif détaillé de chaque chantier.</p>`}
 function level(st){return !st.budget?'':st.pct>1?'bad':st.pct>.85?'warn':''}
 function weekOf(dt){const d=parseD(dt)||new Date();const k=(d.getDay()+6)%7;d.setDate(d.getDate()-k);const a=iso(d);d.setDate(d.getDate()+6);return [a,iso(d)]}
-function payFor(from,to){return DB.workers.map(w=>{let dd=0,g=0;for(const sid in DB.att)for(const dt in DB.att[sid]){if(dt<from||dt>to)continue;const v=DB.att[sid][dt][w.id];if(v){dd+=v[0];g+=v[0]*v[1]}}
-  const adv=DB.adv.filter(a=>a.worker===w.id&&!a.run&&a.date<=to);const av=adv.reduce((a,x)=>a+x.amount,0);return {w,days:dd,gross:Math.round(g),adv:av,advIds:adv.map(a=>a.id),net:Math.round(g)-av}}).filter(r=>r.days||r.adv)}
+function payFor(from,to){return DB.workers.map(w=>{let dd=0,g=0;const bs={};for(const sid in DB.att)for(const dt in DB.att[sid]){if(dt<from||dt>to)continue;const v=DB.att[sid][dt][w.id];if(v){dd+=v[0];g+=v[0]*v[1];const o=bs[sid]=bs[sid]||{n:(site(sid)||{}).name||'Chantier supprimé',d:0,g:0};o.d+=v[0];o.g+=v[0]*v[1]}}
+  const sites=Object.values(bs).map(o=>({n:o.n,d:o.d,g:Math.round(o.g)})).sort((x,y)=>y.d-x.d);
+  const adv=DB.adv.filter(a=>a.worker===w.id&&!a.run&&a.date<=to);const av=adv.reduce((a,x)=>a+x.amount,0);return {w,days:dd,gross:Math.round(g),adv:av,advIds:adv.map(a=>a.id),net:Math.round(g)-av,sites}}).filter(r=>r.days||r.adv)}
+const jj=n=>fmt(n,Number.isInteger(n)?0:1)+'\u00a0j';
+const bySite=r=>(r.sites||[]).map(x=>`${esc(x.n)} : ${jj(x.d)}`).join(' · ');
 
 /* ================= NAVIGATION ================= */
 let R={tab:'sites',site:null,sub:'resume',day:today(),pay:'week',from:'',to:'',bilan:false,bf:'all'};
@@ -966,13 +970,13 @@ function vPay(){const [a,b]=period(),rows=payFor(a,b),tot=rows.reduce((x,r)=>x+M
   if(done.length)h+=`<div class="alertbox warn"><span>Une paie couvrant une partie de ces dates est déjà réglée (${done.map(r=>dFr(r.from)+' – '+dFr(r.to)).join(', ')}). Vérifiez avant de payer à nouveau.</span></div>`;
   if(!rows.length)h+=`<div class="empty" style="margin-top:12px"><b>Rien à payer sur cette période</b>Les jours apparaissent ici dès que vous pointez votre équipe sur un chantier.</div>`;
   else{h+=`<div class="list" style="margin-top:12px">`+
-    rows.map(r=>`<div class="row"><div class="m"><b>${esc(r.w.name)}</b><small>${days(r.days)} · dû ${F(r.gross)}${r.adv?' · avance − '+F(r.adv):''}</small><a class="wa" href="${esc(waHref(r.w.tel,slipTxt(r,a,b)))}" target="_blank" rel="noopener" style="display:inline-block;margin-top:6px">Envoyer sa fiche sur WhatsApp</a></div><div class="v">${F(r.net)}<br><small style="font:500 11px var(--mono);color:var(--muted)">à payer</small></div></div>`).join('')+
+    rows.map(r=>`<div class="row"><div class="m"><b>${esc(r.w.name)}</b><small>${days(r.days)} · dû ${F(r.gross)}${r.adv?' · avance − '+F(r.adv):''}</small>${r.sites&&r.sites.length?`<small class="bysite">📍 ${bySite(r)}</small>`:''}<a class="wa" href="${esc(waHref(r.w.tel,slipTxt(r,a,b)))}" target="_blank" rel="noopener" style="display:inline-block;margin-top:6px">Envoyer sa fiche sur WhatsApp</a></div><div class="v">${F(r.net)}<br><small style="font:500 11px var(--mono);color:var(--muted)">à payer</small></div></div>`).join('')+
     `</div><div class="sumline"><span>Total à payer</span><b>${F(tot)}</b></div>
     <div class="btns"><button class="btn" data-act="payDone" type="button">Paie réglée</button><button class="btn ghost" data-act="pdfPaie" type="button">État de paie PDF</button></div>
     <p class="hint">« Paie réglée » enregistre la paie dans l'historique et marque les avances comme déduites.</p>`}
   if(DB.runs.length)h+=`<h2>Paies réglées</h2><div class="list">`+DB.runs.slice().sort((x,y)=>y.date.localeCompare(x.date)).slice(0,20).map(r=>`<div class="row tap" data-act="viewRun" data-id="${r.id}"><div class="m"><b>${dFr(r.from)} – ${dFr(r.to)}</b><small>Réglée le ${dFr(r.date)} · ${r.lines.length} ouvrier(s)</small></div><div class="v">${F(r.total)}</div></div>`).join('')+`</div>`;
   return h}
-function slipTxt(r,a,b){return `*${DB.co.name}* · Paie du ${dFr(a)} au ${dFr(b)}\n${r.w.name}\nJours travaillés : ${fmt(r.days,Number.isInteger(r.days)?0:1)}\nMontant dû : ${F(r.gross)}${r.adv?`\nAvances déjà reçues : − ${F(r.adv)}`:''}\n*À payer : ${F(r.net)}*`}
+function slipTxt(r,a,b){return `*${DB.co.name}* · Paie du ${dFr(a)} au ${dFr(b)}\n${r.w.name}\nJours travaillés : ${fmt(r.days,Number.isInteger(r.days)?0:1)}${r.sites&&r.sites.length>1?'\n'+r.sites.map(x=>`• ${x.n} : ${jj(x.d)} · ${F(x.g)}`).join('\n'):r.sites&&r.sites.length===1?' ('+r.sites[0].n+')':''}\nMontant dû : ${F(r.gross)}${r.adv?`\nAvances déjà reçues : − ${F(r.adv)}`:''}\n*À payer : ${F(r.net)}*`}
 
 function vSet(){const c=DB.co;
   return `<h1>Mon <em>entreprise</em></h1><p class="lead">Votre entreprise apparaît sur les rapports, les reçus et les états de paie.</p>
@@ -1084,9 +1088,9 @@ document.addEventListener('click',e=>{const el=e.target.closest('[data-act]');if
    case 'editJr':jrForm(DB.jr.find(x=>x.id===id));break;
    case 'copyPoint':copyTxt(pointTxt(s,stats(s.id)),'Point chantier copié : collez-le dans WhatsApp');break;
    case 'period':go({pay:id});break;
-   case 'payDone':{const [a,b]=period(),rows=payFor(a,b);if(!rows.length)break;confirmBtn(el,'Confirmer : paie réglée',()=>{const run={id:newId(),from:a,to:b,date:today(),total:rows.reduce((x,r)=>x+Math.max(0,r.net),0),lines:rows.map(r=>({w:r.w.id,name:r.w.name,days:r.days,gross:r.gross,adv:r.adv,net:r.net}))};
+   case 'payDone':{const [a,b]=period(),rows=payFor(a,b);if(!rows.length)break;confirmBtn(el,'Confirmer : paie réglée',()=>{const run={id:newId(),from:a,to:b,date:today(),total:rows.reduce((x,r)=>x+Math.max(0,r.net),0),lines:rows.map(r=>({w:r.w.id,name:r.w.name,days:r.days,gross:r.gross,adv:r.adv,net:r.net,sites:r.sites}))};
      DB.runs.push(run);rows.forEach(r=>r.advIds.forEach(i=>{const x=DB.adv.find(y=>y.id===i);if(x)x.run=run.id}));save();render();toast('Paie de '+F(run.total)+' enregistrée')});break}
-   case 'viewRun':{const r=DB.runs.find(x=>x.id===id);if(!r)break;sheet('Paie du '+dFr(r.from)+' au '+dFr(r.to),`<div class="tw"><table><thead><tr><th>Ouvrier</th><th class="n">Jours</th><th class="n">Payé</th></tr></thead><tbody>${r.lines.map(l=>`<tr><td>${esc(l.name)}</td><td class="n">${fmt(l.days,Number.isInteger(l.days)?0:1)}</td><td class="n">${fmt(l.net)}</td></tr>`).join('')}</tbody></table></div><div class="sumline"><span>Total réglé le ${dFr(r.date)}</span><b>${F(r.total)}</b></div>`,
+   case 'viewRun':{const r=DB.runs.find(x=>x.id===id);if(!r)break;sheet('Paie du '+dFr(r.from)+' au '+dFr(r.to),`<div class="tw"><table><thead><tr><th>Ouvrier</th><th class="n">Jours</th><th class="n">Payé</th></tr></thead><tbody>${r.lines.map(l=>`<tr><td>${esc(l.name)}${l.sites&&l.sites.length?`<small class="bysite" style="font-size:12px">${bySite(l)}</small>`:''}</td><td class="n">${fmt(l.days,Number.isInteger(l.days)?0:1)}</td><td class="n">${fmt(l.net)}</td></tr>`).join('')}</tbody></table></div><div class="sumline"><span>Total réglé le ${dFr(r.date)}</span><b>${F(r.total)}</b></div>`,
      [{id:'shDel',label:'Annuler cette paie',danger:1,fn:ev=>confirmBtn(ev.target,'Confirmer l\'annulation',()=>{DB.runs=DB.runs.filter(x=>x!==r);DB.adv.forEach(x=>{if(x.run===r.id)x.run=null});save();closeSheet();render();toast('Paie annulée : les avances redeviennent à déduire')})},{id:'shOk',label:'Fermer',ghost:1,fn:closeSheet}]);break}
    case 'pdfClient':pdfSite(s,false);break;
    case 'pdfBilan':pdfSite(s,true);break;
@@ -1204,7 +1208,7 @@ async function pdfGeneral(){const B=bilanData(R.bf),pc=v=>v==null?'—':Math.rou
   h+=dH('Récapitulatif détaillé des chantiers')+B.rows.slice().sort((a,b)=>({bad:0,warn:1,ok:2}[a.flag]-{bad:0,warn:1,ok:2}[b.flag])||(b.st.budget-a.st.budget)).map(recapPdf).join('');
   await makePdf(h+dFoot(),`Bilan-general-${today()}.pdf`,'Bilan général téléchargé')}
 async function pdfPaie(){const [a,b]=period(),rows=payFor(a,b);if(!rows.length)return;const tot=rows.reduce((x,r)=>x+Math.max(0,r.net),0);
-  let h=docHead('ÉTAT DE PAIE',`Du ${dFr(a)} au ${dFr(b)}`)+dTable(['Ouvrier','Métier','Jours','Dû','Avances','À payer','Signature'],rows.map(r=>[esc(r.w.name),esc(r.w.job||''),fmt(r.days,Number.isInteger(r.days)?0:1),fmt(r.gross),r.adv?'− '+fmt(r.adv):'—','<b>'+fmt(r.net)+'</b>','<div style="height:26px"></div>']),[2,3,4,5])+
+  let h=docHead('ÉTAT DE PAIE',`Du ${dFr(a)} au ${dFr(b)}`)+dTable(['Ouvrier','Métier','Jours','Dû','Avances','À payer','Signature'],rows.map(r=>[esc(r.w.name)+(r.sites&&r.sites.length?`<div style="font:500 9.5px/1.35 Manrope,sans-serif;color:#0A7F7A;margin-top:2px">${r.sites.map(x=>`${esc(x.n)} : ${jj(x.d)}`).join('<br>')}</div>`:''),esc(r.w.job||''),fmt(r.days,Number.isInteger(r.days)?0:1),fmt(r.gross),r.adv?'− '+fmt(r.adv):'—','<b>'+fmt(r.net)+'</b>','<div style="height:26px"></div>']),[2,3,4,5])+
    `<div style="display:flex;justify-content:flex-end;padding:14px 44px 0"><div style="background:#16323B;color:#fff;padding:12px 18px;font:800 20px Manrope,sans-serif">Total ${F(tot)}</div></div>`;
   await makePdf(h+dFoot(),`Paie-${a}-au-${b}.pdf`,'État de paie téléchargé')}
 
