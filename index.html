@@ -686,7 +686,7 @@ function clean(o){const d=DEF();if(!isObj(o))return d;
   if(isObj(o.co))for(const k in d.co)if(o.co[k]!=null)d.co[k]=str(o.co[k],200);
   if(!/^#[0-9a-f]{6}$/i.test(d.co.color))d.co.color='#0A7F7A';if(!COUNTRIES[d.co.country])d.co.country='CI';
   const A=a=>Array.isArray(a)?a.filter(isObj).slice(0,5000):[],id=x=>typeof x==='string'&&/^[a-z0-9]{1,24}$/.test(x)?x:newId();
-  d.workers=A(o.workers).map(w=>({id:id(w.id),name:str(w.name,80)||'Sans nom',job:str(w.job,60),tel:str(w.tel,30),rate:Math.max(0,num0(w.rate)),active:w.active!==false,demo:!!w.demo}));
+  d.workers=A(o.workers).map(w=>({id:id(w.id),name:str(w.name,80)||'Sans nom',job:str(w.job,60),tel:str(w.tel,30),rate:Math.max(0,num0(w.rate)),active:w.active!==false&&!w.hidden,hidden:!!w.hidden,demo:!!w.demo}));
   d.sites=A(o.sites).map(s=>({id:id(s.id),name:str(s.name,120)||'Chantier',client:str(s.client,120),tel:str(s.tel,30),place:str(s.place,160),budget:Math.max(0,num0(s.budget)),start:validD(s.start)?s.start:today(),end:validD(s.end)?s.end:'',status:STATUS[s.status]?s.status:'cours',demo:!!s.demo,
     phases:(Array.isArray(s.phases)?s.phases:[]).filter(isObj).slice(0,40).map(x=>({id:id(x.id),name:str(x.name,80)||'Étape',w:Math.max(0,Math.min(100,num0(x.w))),done:Math.max(0,Math.min(100,Math.round(num0(x.done)/5)*5))})),
     hist:(()=>{const h={};if(isObj(s.hist))for(const k in s.hist)if(validD(k))h[k]=Math.max(0,Math.min(100,Math.round(num0(s.hist[k]))));return h})()}));
@@ -944,8 +944,8 @@ function sJournal(s){const L=DB.jr.filter(j=>j.site===s.id).sort((a,b)=>b.date.l
 function vTeam(){const [a,b]=weekOf(today());
   let h=`<h1>Votre <em>équipe</em></h1><p class="lead">Les ouvriers et leur tarif à la journée. Ils sont proposés au pointage de chaque chantier.</p>
    <div class="btns"><button class="btn" data-act="newWorker" type="button">+ Ouvrier</button><button class="btn ghost" data-act="newAdv" type="button">+ Avance</button></div>`;
-  if(!DB.workers.length)return h+`<div class="empty" style="margin-top:14px"><b>Aucun ouvrier</b>Ajoutez maçons, manœuvres, électriciens… avec leur tarif journalier.</div>`;
-  const act=DB.workers.filter(w=>w.active),old=DB.workers.filter(w=>!w.active);
+  if(!DB.workers.some(w=>!w.hidden))return h+`<div class="empty" style="margin-top:14px"><b>Aucun ouvrier</b>Ajoutez maçons, manœuvres, électriciens… avec leur tarif journalier.</div>`;
+  const act=DB.workers.filter(w=>w.active&&!w.hidden),old=DB.workers.filter(w=>!w.active&&!w.hidden);
   const line=w=>{let dd=0;for(const sid in DB.att)for(const dt in DB.att[sid]){if(dt>=a&&dt<=b&&DB.att[sid][dt][w.id])dd+=DB.att[sid][dt][w.id][0]}const av=DB.adv.filter(x=>x.worker===w.id&&!x.run).reduce((x,y)=>x+y.amount,0);
     return `<div class="row tap" data-act="editWorker" data-id="${w.id}"><div class="m"><b>${esc(w.name)}</b><small>${esc(w.job||'Ouvrier')} · ${F(w.rate)} / jour${av?' · avance '+F(av):''}</small></div><div class="v">${dd?days(dd):'—'}<br><small style="font:500 11px var(--mono);color:var(--muted)">cette semaine</small></div></div>`};
   h+=`<h2>Actifs · ${act.length}</h2><div class="list">${act.map(line).join('')||'<div class="row"><div class="m"><small>Aucun ouvrier actif</small></div></div>'}</div>`;
@@ -1002,7 +1002,8 @@ const money=id=>{const n=Math.round(num0(val(id),-1));return n>=0?n:null};
 
 function siteForm(s){const e=s||{name:'',client:'',tel:'',place:'',budget:'',start:today(),end:'',status:'cours'};
   sheet(s?'Modifier le chantier':'Nouveau chantier',`<div class="fields">${fld('sName','Nom du chantier',e.name,{w2:1,ph:'Villa R+1, finitions…'})}${fld('sClient','Client',e.client,{ph:'M. Kouassi'})}${fld('sTel','Téléphone client',e.tel,{type:'tel'})}${fld('sPlace','Lieu',e.place,{w2:1,ph:'Cocody Angré, 8e tranche'})}${fld('sBudget','Montant du devis · '+CTRY().cur,e.budget||'',{type:'number',w2:1,ph:'Ex. : 4500000'})}${fld('sStart','Début',e.start,{type:'date'})}${fld('sEnd','Fin prévue',e.end,{type:'date'})}${s?fld('sStatus','Statut',e.status,{select:STATUS,w2:1}):''}</div>`,
-  [{id:'shSave',label:s?'Enregistrer':'Créer le chantier',fn:()=>{const name=val('sName');if(!name){toast('Donnez un nom au chantier');$('sName').focus();return}
+  [...(s?[{id:'shDel',label:'Supprimer',danger:1,fn:ev=>confirmBtn(ev.target,'Confirmer : tout effacer',()=>delSite(s))}]:[]),
+   {id:'shSave',label:s?'Enregistrer':'Créer le chantier',fn:()=>{const name=val('sName');if(!name){toast('Donnez un nom au chantier');$('sName').focus();return}
     const o={name:name.slice(0,120),client:val('sClient').slice(0,120),tel:val('sTel').slice(0,30),place:val('sPlace').slice(0,160),budget:Math.max(0,Math.round(num0(val('sBudget')))),start:validD(val('sStart'))?val('sStart'):today(),end:validD(val('sEnd'))?val('sEnd'):'',status:s?($('sStatus').value in STATUS?$('sStatus').value:'cours'):'cours'};
     if(s){Object.assign(s,o)}else{if(!FULL&&DB.sites.filter(x=>!x.demo).length>=1){closeSheet();toast('Version d\'essai : 1 chantier maximum.');setTimeout(actSheet,600);return}s={id:newId(),...o};DB.sites.push(s)}save();closeSheet();go({tab:'sites',site:s.id,sub:R.site===s.id?R.sub:'resume'});toast('Chantier enregistré')}}])}
 function phaseForm(ph){const s=site(R.site),e=ph||{name:'',w:'',done:0},opts={};for(let i=0;i<=100;i+=5)opts[i]=i+' %';
@@ -1011,9 +1012,16 @@ function phaseForm(ph){const s=site(R.site),e=ph||{name:'',w:'',done:0},opts={};
   [...(ph?[{id:'shDel',label:'Supprimer',danger:1,fn:ev=>confirmBtn(ev.target,'Confirmer la suppression',()=>{s.phases=s.phases.filter(x=>x!==ph);markProg(s);save();closeSheet();render()})}]:[]),
    {id:'shSave',label:'Enregistrer',fn:()=>{const name=val('phName');if(!name){toast('Donnez un nom à l\'étape');return}const o={name:name.slice(0,80),w:Math.max(0,Math.min(100,num0(val('phW')))),done:Math.max(0,Math.min(100,+$('phDone').value||0))};
     s.phases=s.phases||[];if(ph)Object.assign(ph,o);else s.phases.push({id:newId(),...o});markProg(s);save();closeSheet();render();toast('Étape enregistrée')}}])}
+function delWorker(w){let used=DB.adv.some(a=>a.worker===w.id)||DB.runs.some(r=>JSON.stringify(r).includes(w.id));
+  for(const sid in DB.att)for(const d in DB.att[sid])if(DB.att[sid][d][w.id])used=true;
+  if(used){w.hidden=true;w.active=false;toast('Ouvrier supprimé de l\'équipe. Ses journées et ses paies passées restent dans l\'historique.')}
+  else{DB.workers=DB.workers.filter(x=>x!==w);toast('Ouvrier supprimé')}
+  save();closeSheet();render()}
+function delSite(s){const sid=s.id;DB.jr.filter(j=>j.site===sid).forEach(j=>j.photos.forEach(p=>PH.del(p)));DB.sites=DB.sites.filter(x=>x.id!==sid);delete DB.att[sid];DB.exp=DB.exp.filter(x=>x.site!==sid);DB.pay=DB.pay.filter(x=>x.site!==sid);DB.jr=DB.jr.filter(x=>x.site!==sid);save();closeSheet();go({site:null});toast('Chantier supprimé')}
 function workerForm(w){const e=w||{name:'',job:'',tel:'',rate:'',active:true};
   sheet(w?'Modifier l\'ouvrier':'Nouvel ouvrier',`<div class="fields">${fld('wName','Nom et prénom',e.name,{w2:1})}${fld('wJob','Métier',e.job,{ph:'Maçon, manœuvre…'})}${fld('wTel','Téléphone',e.tel,{type:'tel'})}${fld('wRate','Tarif à la journée · '+CTRY().cur,e.rate||'',{type:'number',w2:1,ph:'Ex. : 7000'})}${w?fld('wAct','Statut',e.active?'1':'0',{select:{1:'Actif',0:'Ne travaille plus avec moi'},w2:1}):''}</div>`,
-  [{id:'shSave',label:'Enregistrer',fn:()=>{const name=val('wName');if(!name){toast('Indiquez le nom de l\'ouvrier');return}const rate=money('wRate');if(!rate){toast('Indiquez le tarif à la journée de l\'ouvrier');return}
+  [...(w?[{id:'shDel',label:'Supprimer',danger:1,fn:ev=>confirmBtn(ev.target,'Confirmer la suppression',()=>delWorker(w))}]:[]),
+   {id:'shSave',label:'Enregistrer',fn:()=>{const name=val('wName');if(!name){toast('Indiquez le nom de l\'ouvrier');return}const rate=money('wRate');if(!rate){toast('Indiquez le tarif à la journée de l\'ouvrier');return}
     const o={name:name.slice(0,80),job:val('wJob').slice(0,60),tel:val('wTel').slice(0,30),rate,active:w?$('wAct').value==='1':true};if(w)Object.assign(w,o);else DB.workers.push({id:newId(),...o});save();closeSheet();render();toast('Ouvrier enregistré')}}])}
 function expForm(e){const s=site(R.site),x=e||{date:today(),cat:'mat',label:'',supplier:'',amount:''};
   sheet(e?'Modifier la dépense':'Nouvelle dépense',`<div class="fields">${fld('eAmt','Montant · '+CTRY().cur,x.amount||'',{type:'number',w2:1})}${fld('eLabel','Désignation',x.label,{w2:1,ph:'Ciment 50 kg × 20, fer de 10…'})}${fld('eCat','Catégorie',x.cat,{select:CATS})}${fld('eDate','Date',x.date,{type:'date'})}${fld('eSup','Fournisseur',x.supplier,{w2:1,ph:'Quincaillerie…'})}</div>`,
@@ -1027,7 +1035,7 @@ function payForm(p){const s=site(R.site),x=p||{date:today(),amount:'',mode:'esp'
    {id:'shSave',label:'Enregistrer',fn:()=>{const a=money('pAmt');if(!a){toast('Indiquez le montant reçu');return}const o={date:validD(val('pDate'))?val('pDate'):today(),amount:a,mode:$('pMode').value in MODES?$('pMode').value:'esp',note:val('pNote').slice(0,200)};
     if(p)Object.assign(p,o);else DB.pay.push({id:newId(),site:s.id,...o});save();closeSheet();render();toast('Versement enregistré · touchez « Reçu » pour le remettre au client')}}])}
 function advForm(x){if(!DB.workers.length){toast('Ajoutez d\'abord un ouvrier');return}const e=x||{worker:DB.workers.find(w=>w.active)?.id||DB.workers[0].id,date:today(),amount:'',note:''};
-  const ws={};DB.workers.forEach(w=>ws[w.id]=w.name);
+  const ws={};DB.workers.forEach(w=>{if(!w.hidden||w.id===e.worker)ws[w.id]=w.name});
   sheet(x?'Modifier l\'avance':'Avance à un ouvrier',`<div class="fields">${fld('aW','Ouvrier',e.worker,{select:ws,w2:1})}${fld('aAmt','Montant · '+CTRY().cur,e.amount||'',{type:'number'})}${fld('aDate','Date',e.date,{type:'date'})}${fld('aNote','Note',e.note,{w2:1,ph:'Transport, santé…'})}</div>`,
   [...(x?[{id:'shDel',label:'Supprimer',danger:1,fn:ev=>confirmBtn(ev.target,'Confirmer la suppression',()=>{DB.adv=DB.adv.filter(y=>y!==x);save();closeSheet();render()})}]:[]),
    {id:'shSave',label:'Enregistrer',fn:()=>{const a=money('aAmt');if(!a){toast('Indiquez le montant de l\'avance');return}const o={worker:worker($('aW').value)?$('aW').value:e.worker,date:validD(val('aDate'))?val('aDate'):today(),amount:a,note:val('aNote').slice(0,160)};
@@ -1057,7 +1065,7 @@ document.addEventListener('click',e=>{const el=e.target.closest('[data-act]');if
    case 'openSite':go({site:id,sub:'resume',day:today()});break;
    case 'sub':go({sub:id});break;
    case 'editSite':siteForm(s);break;
-   case 'delSite':confirmBtn(el,'Confirmer : tout effacer',()=>{const sid=s.id;DB.jr.filter(j=>j.site===sid).forEach(j=>j.photos.forEach(p=>PH.del(p)));DB.sites=DB.sites.filter(x=>x.id!==sid);delete DB.att[sid];DB.exp=DB.exp.filter(x=>x.site!==sid);DB.pay=DB.pay.filter(x=>x.site!==sid);DB.jr=DB.jr.filter(x=>x.site!==sid);save();go({site:null});toast('Chantier supprimé')});break;
+   case 'delSite':confirmBtn(el,'Confirmer : tout effacer',()=>delSite(s));break;
    case 'day':go({day:addDays(R.day,+id)});break;
    case 'gotoDay':go({day:id});break;
    case 'att':{const f=+el.dataset.f,w=worker(id);if(!w)break;DB.att[s.id]=DB.att[s.id]||{};const D=DB.att[s.id][R.day]=DB.att[s.id][R.day]||{};
